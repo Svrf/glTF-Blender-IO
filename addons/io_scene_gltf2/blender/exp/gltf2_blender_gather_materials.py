@@ -160,31 +160,34 @@ def __gather_extensions(blender_material, export_settings):
     if blender_material.get("useVideoTextureExtension", False) == "True":
         image_name = blender_material.get("videoTextureExtension_ImageName")
         if image_name is not None:
-            data = tmp_encode_movie(bpy.data.images[image_name])
-            mime_type="video/mp4"
-            image_base_name = path.splitext(image_name)[0]
+            image = bpy.data.images[image_name]
+            breakpoint()
+            if image is not None and image.source == "MOVIE":
+                data = tmp_encode_movie(image)
+                mime_type="video/mp4"
+                image_base_name = path.splitext(image_name)[0]
 
-            # Create an image, either in a buffer view or in a separate file
-            image = gltf2_io.Image(
-                buffer_view=__gather_buffer_view(data, export_settings),
-                extensions=None,
-                extras=None,
-                mime_type=mime_type,
-                name=image_base_name,
-                uri=__gather_uri(data, image_base_name, mime_type, export_settings)
-            )
+                # Create an image, either in a buffer view or in a separate file
+                source = gltf2_io.Image(
+                    buffer_view=__gather_buffer_view(data, export_settings),
+                    extensions=None,
+                    extras=None,
+                    mime_type=mime_type,
+                    name=image_base_name,
+                    uri=__gather_uri(data, image_base_name, mime_type, export_settings)
+                )
 
-            # Create a texture to use the previous video image
-            texture = gltf2_io.Texture(
-                extensions=None,
-                extras=None,
-                name=None,
-                sampler=None,
-                source=image
-            )
+                # Create a texture to use the previous video image
+                texture = gltf2_io.Texture(
+                    extensions=None,
+                    extras=None,
+                    name=None,
+                    sampler=None,
+                    source=source
+                )
 
-            extension = dict(texture=texture)
-            extensions["SVRF_video_texture"] = Extension("SVRF_video_texture", extension, False)
+                extension = dict(texture=texture)
+                extensions["SVRF_video_texture"] = Extension("SVRF_video_texture", extension, False)
 
     # TODO specular glossiness extension
 
