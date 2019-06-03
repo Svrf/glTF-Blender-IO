@@ -80,6 +80,12 @@ class BlenderNodeAnim():
             name = animation.name + "_" + obj.name
         else:
             name = "Animation_" + str(anim_idx) + "_" + obj.name
+        if len(name) >= 63:
+            # Name is too long to be kept, we are going to keep only animation name for now
+            name = animation.name
+            if len(name) >= 63:
+                # Very long name!
+                name = "Animation_" + str(anim_idx)
         action = bpy.data.actions.new(name)
         # Check if this action has some users.
         # If no user (only 1 indeed), that means that this action must be deleted
@@ -172,10 +178,17 @@ class BlenderNodeAnim():
                         if len(prim.targets) > nb_targets:
                             nb_targets = len(prim.targets)
 
+                if animation.samplers[channel.sampler].interpolation == "CUBICSPLINE":
+                    factor = 3
+                    delta = nb_targets
+                else:
+                    factor = 1
+                    delta = 0
+
                 for idx, key in enumerate(keys):
                     for sk in range(nb_targets):
                         if gltf.shapekeys[sk] is not None: # Do not animate shapekeys not created
-                            obj.data.shape_keys.key_blocks[gltf.shapekeys[sk]].value = values[idx * nb_targets + sk][0]
+                            obj.data.shape_keys.key_blocks[gltf.shapekeys[sk]].value = values[factor * idx * nb_targets + delta + sk][0]
                             obj.data.shape_keys.key_blocks[gltf.shapekeys[sk]].keyframe_insert(
                                 "value",
                                 frame=key[0] * fps,
