@@ -161,33 +161,33 @@ def __gather_extensions(blender_material, export_settings):
         image_name = blender_material.get("videoTextureExtension_ImageName")
         if image_name is not None:
             image = bpy.data.images[image_name]
-            breakpoint()
             if image is not None and image.source == "MOVIE":
                 data = tmp_encode_movie(image)
-                mime_type="video/mp4"
-                image_base_name = path.splitext(image_name)[0]
+                mime_type=__gather_mimetype(image)
+                image_base_name, _extension = path.splitext(image_name)
 
-                # Create an image, either in a buffer view or in a separate file
-                source = gltf2_io.Image(
-                    buffer_view=__gather_buffer_view(data, export_settings),
-                    extensions=None,
-                    extras=None,
-                    mime_type=mime_type,
-                    name=image_base_name,
-                    uri=__gather_uri(data, image_base_name, mime_type, export_settings)
-                )
+                if mime_type is not None:
+                    # Create an image, either in a buffer view or in a separate file
+                    source = gltf2_io.Image(
+                        buffer_view=__gather_buffer_view(data, export_settings),
+                        extensions=None,
+                        extras=None,
+                        mime_type=mime_type,
+                        name=image_base_name,
+                        uri=__gather_uri(data, image_base_name, mime_type, export_settings)
+                    )
 
-                # Create a texture to use the previous video image
-                texture = gltf2_io.Texture(
-                    extensions=None,
-                    extras=None,
-                    name=None,
-                    sampler=None,
-                    source=source
-                )
+                    # Create a texture to use the previous video image
+                    texture = gltf2_io.Texture(
+                        extensions=None,
+                        extras=None,
+                        name=None,
+                        sampler=None,
+                        source=source
+                    )
 
-                extension = dict(texture=texture)
-                extensions["SVRF_video_texture"] = Extension("SVRF_video_texture", extension, False)
+                    extension = dict(texture=texture)
+                    extensions["SVRF_video_texture"] = Extension("SVRF_video_texture", extension, False)
 
     # TODO specular glossiness extension
 
@@ -207,6 +207,17 @@ def __gather_uri(image_data: bytes, image_name: str, mime_type: str, export_sett
             mime_type=mime_type,
             name=image_name,
         )
+    return None
+
+def __gather_mimetype(image: bpy.types.Image):
+    filename = path.basename(image.filepath)
+    _name, extension = path.splitext(filename)
+    if extension in [".avi", ".mov", ".mp4"]:
+        return {
+            ".avi": "video/avi",
+            ".mov": "video/quicktime",
+            ".mp4": "video/mp4",
+        }[extension]
     return None
 
 def __gather_extras(blender_material, export_settings):
